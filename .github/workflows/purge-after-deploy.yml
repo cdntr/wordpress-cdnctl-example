@@ -1,0 +1,28 @@
+# Example: purge the edge cache after your deploy job pushed a new theme.
+# Add the repository secret CDN_ACCESS_TOKEN and the repository variable CDN_ACCOUNT_UUID.
+name: purge-cdn-after-deploy
+on:
+  workflow_dispatch:
+    inputs:
+      theme:
+        description: Theme folder name under wp-content/themes
+        required: false
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - name: Install cdnctl
+        run: |
+          go install github.com/mediatriple/cdnctl@latest
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - name: Purge
+        env:
+          CDN_ENDPOINT: https://cdn.com.tr
+          CDN_ACCESS_TOKEN: ${{ secrets.CDN_ACCESS_TOKEN }}
+          CDNTR_ACCOUNT: ${{ vars.CDN_ACCOUNT_UUID }}
+        run: ./scripts/purge-after-deploy.sh "${{ inputs.theme }}"
